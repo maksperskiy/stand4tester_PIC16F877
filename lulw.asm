@@ -685,11 +685,7 @@ col1
 	bsf PORTA,0
 	bcf PORTA,1
 	bcf PORTA,2
-	movlw .255
-	call Small_delay
-	movlw .255
-	call Small_delay
-	movlw .255
+	movlw .50
 	call Small_delay
 	nop
 	movf PORTA,w
@@ -716,11 +712,7 @@ col2
 	bcf PORTA,0
 	bsf PORTA,1
 	bcf PORTA,2
-	movlw .255
-	call Small_delay
-	movlw .255
-	call Small_delay
-	movlw .255
+	movlw .50
 	call Small_delay
 	nop
 	movf PORTA,w
@@ -748,11 +740,7 @@ col3
 	bcf PORTA,0
 	bcf PORTA,1
 	bsf PORTA,2
-	movlw .255
-	call Small_delay
-	movlw .255
-	call Small_delay
-	movlw .255
+	movlw .50
 	call Small_delay
 	nop
 	movf PORTA,w

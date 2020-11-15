@@ -1,19 +1,19 @@
 MPLINK 4.40, Linker
-Linker Map File - Created Sat Nov 14 22:31:11 2020
+Linker Map File - Created Sun Nov 15 17:06:23 2020
 
                                  Section Info
                   Section       Type    Address   Location Size(Bytes)
                 ---------  ---------  ---------  ---------  ---------
-                   .org_0       code   0x000000    program   0x0004c8
-                   .cinit    romdata   0x000264    program   0x000004
+                   .org_0       code   0x000000    program   0x0004b0
+                   .cinit    romdata   0x000258    program   0x000004
 
 
 
                               Program Memory Usage 
                                Start         End      
                            ---------   ---------      
-                            0x000000    0x000265      
-            614 out of 8454 program addresses used, program memory utilization is 7%
+                            0x000000    0x000259      
+            602 out of 8454 program addresses used, program memory utilization is 7%
 
 
 
@@ -28,14 +28,14 @@ Linker Map File - Created Sat Nov 14 22:31:11 2020
                 ADC_start   0x0001cb    program     static D:\LAB\lulw\lulw.asm     
                      READ   0x00010a    program     static D:\LAB\lulw\lulw.asm     
                   SD_Loop   0x0001fc    program     static D:\LAB\lulw\lulw.asm     
-                     STOP   0x000264    program     static D:\LAB\lulw\lulw.asm     
+                     STOP   0x000258    program     static D:\LAB\lulw\lulw.asm     
               Small_delay   0x0001f9    program     static D:\LAB\lulw\lulw.asm     
              adress_check   0x0000a5    program     static D:\LAB\lulw\lulw.asm     
                     begin   0x000004    program     static D:\LAB\lulw\lulw.asm     
-                      cnt   0x000260    program     static D:\LAB\lulw\lulw.asm     
+                      cnt   0x000254    program     static D:\LAB\lulw\lulw.asm     
                      col1   0x00020c    program     static D:\LAB\lulw\lulw.asm     
-                     col2   0x000224    program     static D:\LAB\lulw\lulw.asm     
-                     col3   0x000242    program     static D:\LAB\lulw\lulw.asm     
+                     col2   0x000220    program     static D:\LAB\lulw\lulw.asm     
+                     col3   0x00023a    program     static D:\LAB\lulw\lulw.asm     
                    col_c1   0x000031    program     static D:\LAB\lulw\lulw.asm     
                 col_delay   0x000030    program     static D:\LAB\lulw\lulw.asm     
                  col_loop   0x00004a    program     static D:\LAB\lulw\lulw.asm     
@@ -162,9 +162,9 @@ Linker Map File - Created Sat Nov 14 22:31:11 2020
                   SD_Loop   0x0001fc    program     static D:\LAB\lulw\lulw.asm     
                   key_det   0x000200    program     static D:\LAB\lulw\lulw.asm     
                      col1   0x00020c    program     static D:\LAB\lulw\lulw.asm     
-                     col2   0x000224    program     static D:\LAB\lulw\lulw.asm     
-                     col3   0x000242    program     static D:\LAB\lulw\lulw.asm     
-                      cnt   0x000260    program     static D:\LAB\lulw\lulw.asm     
-                     STOP   0x000264    program     static D:\LAB\lulw\lulw.asm     
+                     col2   0x000220    program     static D:\LAB\lulw\lulw.asm     
+                     col3   0x00023a    program     static D:\LAB\lulw\lulw.asm     
+                      cnt   0x000254    program     static D:\LAB\lulw\lulw.asm     
+                     STOP   0x000258    program     static D:\LAB\lulw\lulw.asm     
 
 
