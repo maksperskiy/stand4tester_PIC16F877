@@ -16,7 +16,7 @@ ShiftC 			equ 0x23
 RowTime 		equ 0x26
 ColTime 		equ 0x27
 ErrorTime 		equ 0x28
-SpeakerTime 	equ 0x29
+sCounter	 	equ 0x29
 AdressHitachi 	equ 0x2A
 CharHitachi		equ 0x2B
 ComRecieve		equ 0x2C
@@ -49,18 +49,34 @@ begin
 	movlw b'00111000'	
 	movwf TRISA
 	bcf STATUS,RP0
-
 	call init_com
-	call scan_com
+	call clear_chars
+	call read_com
+	goto mode_select
 	
-	
+clear_chars:
+	movlw 0x40
+	movwf FSR
+CC_Loop
+	clrwdt
+	movlw 0x20
+	movwf INDF
+	incf FSR,F
+	movf FSR,W
+	xorlw 0x60
+	btfss STATUS,Z
+	goto CC_Loop
+	return
+
 	
 scan_com:
+	clrwdt
 	btfsc PIR1, RCIF
 	goto mode_select
 	return
 
 mode_select
+	clrwdt
 	bcf STATUS,Z
 	btfsc PIR1,RCIF
 	call read_com
@@ -227,7 +243,7 @@ delay_write:				;Задержка для записи
 	clrf TMR0
 write_c2
 	clrwdt	
-	movlw 0x15
+	movlw 0x25
 	subwf TMR0,0
 	btfss STATUS,0x02
 	goto write_c2
@@ -250,94 +266,22 @@ less20
 	return
 	
 
-write_error			;Код ERROR
-	bcf PORTC,0x00
-	movlw 0x01
-	call write
-	clrwdt
-	movlw 0x38
-	call write
-	movlw 0x06
-	call write
-	movlw 0x0c
-	call write
-	bsf PORTC,0x00
-
-	movlw 0x45			;Слово "ERROR"
-	call write
-	movlw 0x52
-	call write
-	movlw 0x52
-	call write
-	movlw 0x4F
-	call write
-	movlw 0x52
-	call write
-
-	movlw 0x00
-	movwf PORTB
-	movlw 0x00
-	movwf PORTC
-	clrwdt
-	call error_delay
-	call redraw
-	goto mode_select
-error_delay:			;Задержка для ERROR
-	clrwdt
-	movlw 0x3D
-	movwf ErrorTime
-	clrf TMR0
-error_c
-	clrwdt	
-	movlw 0xff
-	subwf TMR0,0
-	btfss STATUS,0x02
-	goto error_c
-	goto error_d
-error_d
-	clrf TMR0
-	bcf STATUS,0x02
-	clrwdt	
-	decfsz ErrorTime,1
-	goto error_c
-	return
 
 
 
 
 speaker:					;Пищалка
 	bsf PORTC,0x01
-	call speaker_delay
+	call s_segment_counter
 	bcf PORTC,0x01
-	call speaker_delay
+	call s_segment_counter
 	bsf PORTC,0x01
-	call speaker_delay
+	call s_segment_counter
 	bcf PORTC,0x01
-	call speaker_delay
+	call s_segment_counter
 	bsf PORTC,0x01
-	call speaker_delay
+	call s_segment_counter
 	bcf PORTC,0x01
-	return
-speaker_delay:			;Задержка для пищалки
-	clrwdt
-	movlw 0x0B
-	movwf SpeakerTime
-	call s_segment
-	clrf FSR
-	clrf TMR0
-speaker_c
-	clrwdt	
-	movlw 0xff
-	subwf TMR0,0
-	btfss STATUS,0x02
-	goto speaker_c
-	goto speaker_d
-speaker_d
-	clrf TMR0
-	bcf STATUS,0x02
-	clrwdt	
-	decfsz SpeakerTime,1
-	goto speaker_c
 	return
 
 
@@ -451,6 +395,7 @@ draw_loop
 	clrf PORTC
 	clrwdt
 	call delay_write
+	clrf ComRecieve
 	return
 draw_next:				;переход на 2 строку
 	clrwdt
@@ -460,7 +405,7 @@ draw_next:				;переход на 2 строку
 	bsf PORTC,0 
 	return
 
-redraw:
+redraw
 	bcf PORTC,0x00
 	movlw 0x01
 	call write
@@ -498,8 +443,8 @@ redraw_loop
 	clrf PORTC
 	clrwdt
 	call delay_write
-	goto STOP
-	return
+	clrf ComRecieve
+	goto mode_select
 redraw_next:				;переход на 2 строку
 	clrwdt
 	bcf PORTC, 0
@@ -509,19 +454,70 @@ redraw_next:				;переход на 2 строку
 	return
 
 
-test_chars:
-	movlw 0x40
-	movwf FSR
-test_loop
-	movf FSR,W
-	movwf INDF
-	incf FSR,F
-	movf FSR,W
-	xorlw 0x60
-	btfss STATUS,Z
-	goto test_loop
+write_error			;Код ERROR
+	bcf PORTC,0x00
+	movlw 0x01
+	call write
+	clrwdt
+	movlw 0x38
+	call write
+	movlw 0x06
+	call write
+	movlw 0x0c
+	call write
+	bsf PORTC,0x00
+
+	movlw 0x45			;Слово "ERROR"
+	call write
+	movlw 0x52
+	call write
+	movlw 0x52
+	call write
+	movlw 0x4F
+	call write
+	movlw 0x52
+	call write
+
+	movlw 0x00
+	movwf PORTB
+	movlw 0x00
+	movwf PORTC
+	clrwdt
+	call error_delay
+	goto redraw
+	goto mode_select
+error_delay:			;Задержка для ERROR
+	clrwdt
+	movlw 0x3D
+	movwf ErrorTime
+	clrf TMR0
+error_c
+	clrwdt	
+	movlw 0xff
+	subwf TMR0,0
+	btfss STATUS,0x02
+	goto error_c
+	goto error_d
+error_d
+	clrf TMR0
+	bcf STATUS,0x02
+	clrwdt	
+	decfsz ErrorTime,1
+	goto error_c
 	return
 
+
+s_segment_counter:
+	bcf STATUS, RP1
+	bcf STATUS, RP0
+	movlw 0x16
+	movwf sCounter
+SC_Loop
+	clrwdt
+	call s_segment
+	decfsz sCounter,f
+	goto SC_Loop
+	return
 
 s_segment:
 	movlw 0x00
@@ -581,7 +577,7 @@ s_segment_delay
 	clrf TMR0
 s_segment_c
 	clrwdt	
-	movlw 0x3A
+	movlw 0x0A
 	subwf TMR0,0
 	btfss STATUS,0x02
 	goto s_segment_c

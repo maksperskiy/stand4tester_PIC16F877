@@ -1,4 +1,4 @@
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE  1
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE  1
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -31,7 +31,7 @@ LOC  OBJECT CODE     LINE SOURCE TEXT
   00000026            00016 RowTime                 equ 0x26
   00000027            00017 ColTime                 equ 0x27
   00000028            00018 ErrorTime               equ 0x28
-  00000029            00019 SpeakerTime     equ 0x29
+  00000029            00019 sCounter                equ 0x29
   0000002A            00020 AdressHitachi   equ 0x2A
   0000002B            00021 CharHitachi             equ 0x2B
   0000002C            00022 ComRecieve              equ 0x2C
@@ -57,7 +57,7 @@ LOC  OBJECT CODE     LINE SOURCE TEXT
 000C   0064           00042         clrwdt
 000D   30A0           00043         movlw b'10100000'       
 000E   0087           00044         movwf TRISC
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE  2
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE  2
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
@@ -70,805 +70,801 @@ LOC  OBJECT CODE     LINE SOURCE TEXT
 0013   3038           00049         movlw b'00111000'       
 0014   0085           00050         movwf TRISA
 0015   1283           00051         bcf STATUS,RP0
-                      00052 
-0016   2???           00053         call init_com
-0017   2???           00054         call scan_com
-                      00055         
+0016   2???           00052         call init_com
+0017   2???           00053         call clear_chars
+0018   2???           00054         call read_com
+0019   2???           00055         goto mode_select
                       00056         
-                      00057         
-0018                  00058 scan_com:
-0018   1A8C           00059         btfsc PIR1, RCIF
-0019   2???           00060         goto mode_select
-001A   0008           00061         return
-                      00062 
-001B                  00063 mode_select
-001B   1103           00064         bcf STATUS,Z
-001C   1A8C           00065         btfsc PIR1,RCIF
-001D   2???           00066         call read_com
-001E   1003           00067         bcf STATUS,0x00
-                      00068 
-001F   3067           00069         movlw 0x67
-0020   062C           00070         xorwf ComRecieve,0
-0021   1903           00071         btfsc STATUS,Z
-0022   2???           00072         call ADC
-                      00073         
-0023   3044           00074         movlw 0x44
-0024   062C           00075         xorwf ComRecieve,0
-0025   1903           00076         btfsc STATUS,Z
-0026   2???           00077         call draw_hitachi
-                      00078 
-0027   3033           00079         movlw 0x33
-0028   062C           00080         xorwf ComRecieve,0
-0029   1903           00081         btfsc STATUS,Z
-002A   2???           00082         call row
-                      00083         
-002B   3022           00084         movlw 0x22
-002C   062C           00085         xorwf ComRecieve,0
-002D   1903           00086         btfsc STATUS,Z
-002E   2???           00087         call column
-                      00088 
-002F   2???           00089         goto mode_select
-                      00090         
-                      00091 
-0030                  00092 col_delay:
-0030   0181           00093         clrf TMR0
-0031                  00094 col_c1
-0031   0064           00095         clrwdt  
-0032   30F4           00096         movlw 0xf4
-0033   0201           00097         subwf TMR0,0
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE  3
+001A                  00057 clear_chars:
+001A   3040           00058         movlw 0x40
+001B   0084           00059         movwf FSR
+001C                  00060 CC_Loop
+001C   0064           00061         clrwdt
+001D   3020           00062         movlw 0x20
+001E   0080           00063         movwf INDF
+001F   0A84           00064         incf FSR,F
+0020   0804           00065         movf FSR,W
+0021   3A60           00066         xorlw 0x60
+0022   1D03           00067         btfss STATUS,Z
+0023   2???           00068         goto CC_Loop
+0024   0008           00069         return
+                      00070 
+                      00071         
+0025                  00072 scan_com:
+0025   0064           00073         clrwdt
+0026   1A8C           00074         btfsc PIR1, RCIF
+0027   2???           00075         goto mode_select
+0028   0008           00076         return
+                      00077 
+0029                  00078 mode_select
+0029   0064           00079         clrwdt
+002A   1103           00080         bcf STATUS,Z
+002B   1A8C           00081         btfsc PIR1,RCIF
+002C   2???           00082         call read_com
+002D   1003           00083         bcf STATUS,0x00
+                      00084 
+002E   3067           00085         movlw 0x67
+002F   062C           00086         xorwf ComRecieve,0
+0030   1903           00087         btfsc STATUS,Z
+0031   2???           00088         call ADC
+                      00089         
+0032   3044           00090         movlw 0x44
+0033   062C           00091         xorwf ComRecieve,0
+0034   1903           00092         btfsc STATUS,Z
+0035   2???           00093         call draw_hitachi
+                      00094 
+0036   3033           00095         movlw 0x33
+0037   062C           00096         xorwf ComRecieve,0
+0038   1903           00097         btfsc STATUS,Z
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE  3
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-0034   1D03           00098         btfss STATUS,0x02
-0035   2???           00099         goto col_c1
-0036   0008           00100         return
-                      00101 
-                      00102 
-0037                  00103 column
-0037   2???           00104         call speaker
-0038                  00105 col_start
-0038   2???           00106         call scan_com
-0039   0064           00107         clrwdt
-003A   1683           00108         bsf STATUS,RP0
-003B   3000           00109         movlw 0x00      
-003C   0086           00110         movwf TRISB
-003D   3000           00111         movlw 0x00      
-003E   0088           00112         movwf TRISD
-003F   1283           00113         bcf STATUS,RP0
-0040   1303           00114         bcf STATUS,RP1
-0041   1003           00115         bcf STATUS,C
-0042   30FF           00116         movlw 0xff
-0043   0086           00117         movwf PORTB
-0044   0088           00118         movwf PORTD
-0045   30FF           00119         movlw 0xff
-0046   00A5           00120         movwf ShiftD
-0047   00A4           00121         movwf ShiftB
-0048   3000           00122         movlw 0x00
-0049   0084           00123         movwf FSR
-                      00124         
-004A                  00125 col_loop
-004A   0064           00126         clrwdt
-004B   0DA4           00127         rlf ShiftB,F
-004C   0DA5           00128         rlf ShiftD,F
-004D   30FF           00129         movlw 0xff
-004E   0086           00130         movwf PORTB
-004F   0088           00131         movwf PORTD
-0050   301F           00132         movlw 0x1f
-0051   0087           00133         movwf PORTC
-0052   0824           00134         movf ShiftB,W
-0053   0086           00135         movwf PORTB
-0054   0825           00136         movf ShiftD,W
-0055   0088           00137         movwf PORTD
-0056   2???           00138         call col_delay
-0057   0A84           00139         incf FSR,F
-0058   0804           00140         movf FSR,W
-0059   3A10           00141         xorlw 0x10
-005A   1D03           00142         btfss STATUS,Z
-005B   2???           00143         goto col_loop
-005C   0DA5           00144         rlf ShiftD,F
-005D   2???           00145         goto col_start
-                      00146         
-005E                  00147 row_delay:
-005E   0064           00148         clrwdt
-005F   3003           00149         movlw 0x03
-0060   00A6           00150         movwf RowTime
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE  4
+0039   2???           00098         call row
+                      00099         
+003A   3022           00100         movlw 0x22
+003B   062C           00101         xorwf ComRecieve,0
+003C   1903           00102         btfsc STATUS,Z
+003D   2???           00103         call column
+                      00104 
+003E   2???           00105         goto mode_select
+                      00106         
+                      00107 
+003F                  00108 col_delay:
+003F   0181           00109         clrf TMR0
+0040                  00110 col_c1
+0040   0064           00111         clrwdt  
+0041   30F4           00112         movlw 0xf4
+0042   0201           00113         subwf TMR0,0
+0043   1D03           00114         btfss STATUS,0x02
+0044   2???           00115         goto col_c1
+0045   0008           00116         return
+                      00117 
+                      00118 
+0046                  00119 column
+0046   2???           00120         call speaker
+0047                  00121 col_start
+0047   2???           00122         call scan_com
+0048   0064           00123         clrwdt
+0049   1683           00124         bsf STATUS,RP0
+004A   3000           00125         movlw 0x00      
+004B   0086           00126         movwf TRISB
+004C   3000           00127         movlw 0x00      
+004D   0088           00128         movwf TRISD
+004E   1283           00129         bcf STATUS,RP0
+004F   1303           00130         bcf STATUS,RP1
+0050   1003           00131         bcf STATUS,C
+0051   30FF           00132         movlw 0xff
+0052   0086           00133         movwf PORTB
+0053   0088           00134         movwf PORTD
+0054   30FF           00135         movlw 0xff
+0055   00A5           00136         movwf ShiftD
+0056   00A4           00137         movwf ShiftB
+0057   3000           00138         movlw 0x00
+0058   0084           00139         movwf FSR
+                      00140         
+0059                  00141 col_loop
+0059   0064           00142         clrwdt
+005A   0DA4           00143         rlf ShiftB,F
+005B   0DA5           00144         rlf ShiftD,F
+005C   30FF           00145         movlw 0xff
+005D   0086           00146         movwf PORTB
+005E   0088           00147         movwf PORTD
+005F   301F           00148         movlw 0x1f
+0060   0087           00149         movwf PORTC
+0061   0824           00150         movf ShiftB,W
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE  4
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-0061   0181           00151         clrf TMR0
-0062                  00152 row_c2
-0062   0064           00153         clrwdt  
-0063   30FF           00154         movlw 0xff
-0064   0201           00155         subwf TMR0,0
-0065   1D03           00156         btfss STATUS,0x02
-0066   2???           00157         goto row_c2
-0067   2???           00158         goto row_d2
-0068                  00159 row_d2
-0068   0181           00160         clrf TMR0
-0069   1103           00161         bcf STATUS,0x02
-006A   0064           00162         clrwdt  
-006B   0BA6           00163         decfsz RowTime,1
-006C   2???           00164         goto row_c2
-006D   0008           00165         return
-                      00166 
-006E                  00167 row
-006E   2???           00168         call speaker
-006F                  00169 row_start
-006F   2???           00170         call scan_com
-0070   30FF           00171         movlw 0xff
-0071   0086           00172         movwf PORTB
-0072   0088           00173         movwf PORTD
-0073   3001           00174         movlw 0x01
-0074   00A3           00175         movwf ShiftC
-0075   0087           00176         movwf PORTC
-0076   3000           00177         movlw 0x00
-0077   0086           00178         movwf PORTB
-0078   0088           00179         movwf PORTD
-0079   3000           00180         movlw 0x00
-007A   0084           00181         movwf FSR
-007B                  00182 row_loop
-007B   0064           00183         clrwdt
-007C   2???           00184         call row_delay
-007D   1003           00185         bcf STATUS,0x00
-007E   3000           00186         movlw 0x00
-007F   0087           00187         movwf PORTC
-0080   0DA3           00188         rlf ShiftC,F
-0081   0823           00189         movf ShiftC,W
-0082   0087           00190         movwf PORTC
-0083   0A84           00191         incf FSR,F
-0084   0804           00192         movf FSR,W
-0085   3A05           00193         xorlw 0x05
-0086   1D03           00194         btfss STATUS,Z
-0087   2???           00195         goto row_loop
-0088   0DA3           00196         rlf ShiftC,F
-0089   2???           00197         goto row_start
-                      00198 
-                      00199 
-008A                  00200 read_char:
-008A   2???           00201         call read_com
-008B   082C           00202         movf ComRecieve,w
-008C   00AB           00203         movwf CharHitachi
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE  5
+0062   0086           00151         movwf PORTB
+0063   0825           00152         movf ShiftD,W
+0064   0088           00153         movwf PORTD
+0065   2???           00154         call col_delay
+0066   0A84           00155         incf FSR,F
+0067   0804           00156         movf FSR,W
+0068   3A10           00157         xorlw 0x10
+0069   1D03           00158         btfss STATUS,Z
+006A   2???           00159         goto col_loop
+006B   0DA5           00160         rlf ShiftD,F
+006C   2???           00161         goto col_start
+                      00162         
+006D                  00163 row_delay:
+006D   0064           00164         clrwdt
+006E   3003           00165         movlw 0x03
+006F   00A6           00166         movwf RowTime
+0070   0181           00167         clrf TMR0
+0071                  00168 row_c2
+0071   0064           00169         clrwdt  
+0072   30FF           00170         movlw 0xff
+0073   0201           00171         subwf TMR0,0
+0074   1D03           00172         btfss STATUS,0x02
+0075   2???           00173         goto row_c2
+0076   2???           00174         goto row_d2
+0077                  00175 row_d2
+0077   0181           00176         clrf TMR0
+0078   1103           00177         bcf STATUS,0x02
+0079   0064           00178         clrwdt  
+007A   0BA6           00179         decfsz RowTime,1
+007B   2???           00180         goto row_c2
+007C   0008           00181         return
+                      00182 
+007D                  00183 row
+007D   2???           00184         call speaker
+007E                  00185 row_start
+007E   2???           00186         call scan_com
+007F   30FF           00187         movlw 0xff
+0080   0086           00188         movwf PORTB
+0081   0088           00189         movwf PORTD
+0082   3001           00190         movlw 0x01
+0083   00A3           00191         movwf ShiftC
+0084   0087           00192         movwf PORTC
+0085   3000           00193         movlw 0x00
+0086   0086           00194         movwf PORTB
+0087   0088           00195         movwf PORTD
+0088   3000           00196         movlw 0x00
+0089   0084           00197         movwf FSR
+008A                  00198 row_loop
+008A   0064           00199         clrwdt
+008B   2???           00200         call row_delay
+008C   1003           00201         bcf STATUS,0x00
+008D   3000           00202         movlw 0x00
+008E   0087           00203         movwf PORTC
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE  5
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-008D   0008           00204         return
-008E                  00205 read_adress:
-008E   2???           00206         call read_com
-008F   082C           00207         movf ComRecieve,w
-0090   172C           00208         bsf ComRecieve,0x06
-0091   082C           00209         movf ComRecieve,W
-0092   00AA           00210         movwf AdressHitachi
-0093   2???           00211         call adress_check
-0094   0008           00212         return
-                      00213 
+008F   0DA3           00204         rlf ShiftC,F
+0090   0823           00205         movf ShiftC,W
+0091   0087           00206         movwf PORTC
+0092   0A84           00207         incf FSR,F
+0093   0804           00208         movf FSR,W
+0094   3A05           00209         xorlw 0x05
+0095   1D03           00210         btfss STATUS,Z
+0096   2???           00211         goto row_loop
+0097   0DA3           00212         rlf ShiftC,F
+0098   2???           00213         goto row_start
                       00214 
-0095                  00215 write:                                          ;Код записи в Hitachi
-0095   1303           00216         bcf STATUS,RP1
-0096   1283           00217         bcf STATUS,RP0
-0097   0188           00218         clrf PORTD
-0098   0086           00219         movwf PORTB
-0099   1507           00220         bsf PORTC,0x02                  ;Считывание Hitachi
-009A   2???           00221         call delay_write
-009B   1107           00222         bcf PORTC,0x02
-009C   2???           00223         call delay_write
-009D   0008           00224         return
-                      00225         
-009E                  00226 delay_write:                            ;Задержка для записи
-009E   0181           00227         clrf TMR0
-009F                  00228 write_c2
-009F   0064           00229         clrwdt  
-00A0   3015           00230         movlw 0x15
-00A1   0201           00231         subwf TMR0,0
-00A2   1D03           00232         btfss STATUS,0x02
-00A3   2???           00233         goto write_c2
-00A4   0008           00234         return
-                      00235 
-                      00236 
-00A5                  00237 adress_check:
-00A5                  00238 more0
-00A5   1403           00239         bsf STATUS,C
-00A6   3040           00240         movlw 0x40
-00A7   022A           00241         subwf AdressHitachi,0
-00A8   1C03           00242         btfss STATUS,C
-00A9   2???           00243         goto write_error
-00AA   2???           00244         goto less20
-00AB                  00245 less20
-00AB   3060           00246         movlw 0x60
-00AC   022A           00247         subwf AdressHitachi,0
-00AD   1803           00248         btfsc STATUS,C
-00AE   2???           00249         goto write_error
-00AF   0008           00250         return
-                      00251         
+                      00215 
+0099                  00216 read_char:
+0099   2???           00217         call read_com
+009A   082C           00218         movf ComRecieve,w
+009B   00AB           00219         movwf CharHitachi
+009C   0008           00220         return
+009D                  00221 read_adress:
+009D   2???           00222         call read_com
+009E   082C           00223         movf ComRecieve,w
+009F   172C           00224         bsf ComRecieve,0x06
+00A0   082C           00225         movf ComRecieve,W
+00A1   00AA           00226         movwf AdressHitachi
+00A2   2???           00227         call adress_check
+00A3   0008           00228         return
+                      00229 
+                      00230 
+00A4                  00231 write:                                          ;Код записи в Hitachi
+00A4   1303           00232         bcf STATUS,RP1
+00A5   1283           00233         bcf STATUS,RP0
+00A6   0188           00234         clrf PORTD
+00A7   0086           00235         movwf PORTB
+00A8   1507           00236         bsf PORTC,0x02                  ;Считывание Hitachi
+00A9   2???           00237         call delay_write
+00AA   1107           00238         bcf PORTC,0x02
+00AB   2???           00239         call delay_write
+00AC   0008           00240         return
+                      00241         
+00AD                  00242 delay_write:                            ;Задержка для записи
+00AD   0181           00243         clrf TMR0
+00AE                  00244 write_c2
+00AE   0064           00245         clrwdt  
+00AF   3025           00246         movlw 0x25
+00B0   0201           00247         subwf TMR0,0
+00B1   1D03           00248         btfss STATUS,0x02
+00B2   2???           00249         goto write_c2
+00B3   0008           00250         return
+                      00251 
                       00252 
-00B0                  00253 write_error                     ;Код ERROR
-00B0   1007           00254         bcf PORTC,0x00
-00B1   3001           00255         movlw 0x01
-00B2   2???           00256         call write
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE  6
+00B4                  00253 adress_check:
+00B4                  00254 more0
+00B4   1403           00255         bsf STATUS,C
+00B5   3040           00256         movlw 0x40
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE  6
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-00B3   0064           00257         clrwdt
-00B4   3038           00258         movlw 0x38
-00B5   2???           00259         call write
-00B6   3006           00260         movlw 0x06
-00B7   2???           00261         call write
-00B8   300C           00262         movlw 0x0c
-00B9   2???           00263         call write
-00BA   1407           00264         bsf PORTC,0x00
-                      00265 
-00BB   3045           00266         movlw 0x45                      ;Слово "ERROR"
-00BC   2???           00267         call write
-00BD   3052           00268         movlw 0x52
-00BE   2???           00269         call write
-00BF   3052           00270         movlw 0x52
-00C0   2???           00271         call write
-00C1   304F           00272         movlw 0x4F
-00C2   2???           00273         call write
-00C3   3052           00274         movlw 0x52
-00C4   2???           00275         call write
-                      00276 
-00C5   3000           00277         movlw 0x00
-00C6   0086           00278         movwf PORTB
-00C7   3000           00279         movlw 0x00
-00C8   0087           00280         movwf PORTC
-00C9   0064           00281         clrwdt
-00CA   2???           00282         call error_delay
-00CB   2???           00283         call redraw
-00CC   2???           00284         goto mode_select
-00CD                  00285 error_delay:                    ;Задержка для ERROR
-00CD   0064           00286         clrwdt
-00CE   303D           00287         movlw 0x3D
-00CF   00A8           00288         movwf ErrorTime
-00D0   0181           00289         clrf TMR0
-00D1                  00290 error_c
-00D1   0064           00291         clrwdt  
-00D2   30FF           00292         movlw 0xff
-00D3   0201           00293         subwf TMR0,0
-00D4   1D03           00294         btfss STATUS,0x02
-00D5   2???           00295         goto error_c
-00D6   2???           00296         goto error_d
-00D7                  00297 error_d
-00D7   0181           00298         clrf TMR0
-00D8   1103           00299         bcf STATUS,0x02
-00D9   0064           00300         clrwdt  
-00DA   0BA8           00301         decfsz ErrorTime,1
-00DB   2???           00302         goto error_c
-00DC   0008           00303         return
-                      00304 
+00B6   022A           00257         subwf AdressHitachi,0
+00B7   1C03           00258         btfss STATUS,C
+00B8   2???           00259         goto write_error
+00B9   2???           00260         goto less20
+00BA                  00261 less20
+00BA   3060           00262         movlw 0x60
+00BB   022A           00263         subwf AdressHitachi,0
+00BC   1803           00264         btfsc STATUS,C
+00BD   2???           00265         goto write_error
+00BE   0008           00266         return
+                      00267         
+                      00268 
+                      00269 
+                      00270 
+                      00271 
+                      00272 
+00BF                  00273 speaker:                                        ;Пищалка
+00BF   1487           00274         bsf PORTC,0x01
+00C0   2???           00275         call s_segment_counter
+00C1   1087           00276         bcf PORTC,0x01
+00C2   2???           00277         call s_segment_counter
+00C3   1487           00278         bsf PORTC,0x01
+00C4   2???           00279         call s_segment_counter
+00C5   1087           00280         bcf PORTC,0x01
+00C6   2???           00281         call s_segment_counter
+00C7   1487           00282         bsf PORTC,0x01
+00C8   2???           00283         call s_segment_counter
+00C9   1087           00284         bcf PORTC,0x01
+00CA   0008           00285         return
+                      00286 
+                      00287 
+                      00288 
+                      00289 
+00CB                  00290 init_com:
+00CB   1683           00291         bsf STATUS, RP0
+00CC   1303           00292         bcf STATUS, RP1
+00CD   1787           00293         bsf TRISC, 7
+00CE   1707           00294         bsf TRISC, 6
+00CF   1518           00295         bsf TXSTA, BRGH
+00D0   3019           00296         movlw .25
+00D1   0099           00297         movwf SPBRG
+00D2   1218           00298         bcf TXSTA, SYNC
+00D3   1318           00299         bcf TXSTA, TX9
+00D4   1283           00300         bcf STATUS, RP0
+00D5   1318           00301         bcf RCSTA, RX9
+00D6   1798           00302         bsf RCSTA, SPEN
+00D7   1618           00303         bsf RCSTA, CREN
+00D8   0008           00304         return
                       00305 
-                      00306 
-                      00307 
-00DD                  00308 speaker:                                        ;Пищалка
-00DD   1487           00309         bsf PORTC,0x01
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE  7
+00D9                  00306 read_com:
+00D9   1283           00307         bcf STATUS, RP0
+00DA                  00308 READ
+00DA   0064           00309         clrwdt
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE  7
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-00DE   2???           00310         call speaker_delay
-00DF   1087           00311         bcf PORTC,0x01
-00E0   2???           00312         call speaker_delay
-00E1   1487           00313         bsf PORTC,0x01
-00E2   2???           00314         call speaker_delay
-00E3   1087           00315         bcf PORTC,0x01
-00E4   2???           00316         call speaker_delay
-00E5   1487           00317         bsf PORTC,0x01
-00E6   2???           00318         call speaker_delay
-00E7   1087           00319         bcf PORTC,0x01
-00E8   0008           00320         return
-00E9                  00321 speaker_delay:                  ;Задержка для пищалки
-00E9   0064           00322         clrwdt
-00EA   300B           00323         movlw 0x0B
-00EB   00A9           00324         movwf SpeakerTime
-00EC   2???           00325         call s_segment
-00ED   0184           00326         clrf FSR
-00EE   0181           00327         clrf TMR0
-00EF                  00328 speaker_c
-00EF   0064           00329         clrwdt  
-00F0   30FF           00330         movlw 0xff
-00F1   0201           00331         subwf TMR0,0
-00F2   1D03           00332         btfss STATUS,0x02
-00F3   2???           00333         goto speaker_c
-00F4   2???           00334         goto speaker_d
-00F5                  00335 speaker_d
-00F5   0181           00336         clrf TMR0
-00F6   1103           00337         bcf STATUS,0x02
-00F7   0064           00338         clrwdt  
-00F8   0BA9           00339         decfsz SpeakerTime,1
-00F9   2???           00340         goto speaker_c
-00FA   0008           00341         return
-                      00342 
-                      00343 
-                      00344 
-                      00345 
-00FB                  00346 init_com:
-00FB   1683           00347         bsf STATUS, RP0
-00FC   1303           00348         bcf STATUS, RP1
-00FD   1787           00349         bsf TRISC, 7
-00FE   1707           00350         bsf TRISC, 6
-00FF   1518           00351         bsf TXSTA, BRGH
-0100   3019           00352         movlw .25
-0101   0099           00353         movwf SPBRG
-0102   1218           00354         bcf TXSTA, SYNC
-0103   1318           00355         bcf TXSTA, TX9
-0104   1283           00356         bcf STATUS, RP0
-0105   1318           00357         bcf RCSTA, RX9
-0106   1798           00358         bsf RCSTA, SPEN
-0107   1618           00359         bsf RCSTA, CREN
-0108   0008           00360         return
-                      00361 
-0109                  00362 read_com:
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE  8
+00DB   1E8C           00310         btfss PIR1, RCIF
+00DC   2???           00311         goto READ  
+00DD   1898           00312         btfsc RCSTA, OERR
+00DE   2???           00313         goto error1
+00DF   1918           00314         btfsc RCSTA, FERR
+00E0   2???           00315         goto error2
+00E1   081A           00316         movf RCREG,0x00
+00E2   00AC           00317         movwf ComRecieve
+00E3   0008           00318         return
+00E4                  00319 error1
+00E4   2???           00320         goto STOP
+00E5                  00321 error2 
+00E5   2???           00322         goto STOP
+00E6   0008           00323         return
+                      00324 
+00E7                  00325 write_com:
+00E7   1683           00326         bsf STATUS, RP0
+00E8   1303           00327         bcf STATUS, RP1
+00E9   1698           00328         bsf TXSTA, TXEN
+00EA   1283           00329         bcf STATUS, RP0
+00EB   0099           00330         movwf TXREG
+00EC   1683           00331         bsf STATUS, RP0
+00ED                  00332 write_check
+00ED   1C98           00333         btfss TXSTA, TRMT
+00EE   2???           00334         goto write_check
+00EF   1298           00335         bcf TXSTA, TXEN
+00F0   0008           00336         return
+                      00337 
+00F1                  00338 draw_hitachi:
+00F1   2???           00339         call speaker
+                      00340 
+00F2   1007           00341         bcf PORTC,0x00
+00F3   3001           00342         movlw 0x01
+00F4   2???           00343         call write
+00F5   3002           00344         movlw 0x02
+00F6   2???           00345         call write
+00F7   0064           00346         clrwdt
+00F8   3038           00347         movlw 0x38
+00F9   2???           00348         call write
+00FA   3006           00349         movlw 0x06
+00FB   2???           00350         call write
+00FC   300C           00351         movlw 0x0c
+00FD   2???           00352         call write
+00FE   1407           00353         bsf PORTC,0x00
+00FF   3040           00354         movlw 0x40
+0100   0084           00355         movwf FSR
+0101   1103           00356         bcf STATUS,Z
+0102   0186           00357         clrf PORTB
+                      00358         
+                      00359 
+0103                  00360 wait_char
+0103   0064           00361         clrwdt
+0104   2???           00362         call delay_write
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE  8
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-0109   1283           00363         bcf STATUS, RP0
-010A                  00364 READ
-010A   0064           00365         clrwdt
-010B   1E8C           00366         btfss PIR1, RCIF
-010C   2???           00367         goto READ  
-010D   1898           00368         btfsc RCSTA, OERR
-010E   2???           00369         goto error1
-010F   1918           00370         btfsc RCSTA, FERR
-0110   2???           00371         goto error2
-0111   081A           00372         movf RCREG,0x00
-0112   00AC           00373         movwf ComRecieve
-0113   0008           00374         return
-0114                  00375 error1
-0114   2???           00376         goto STOP
-0115                  00377 error2 
-0115   2???           00378         goto STOP
-0116   0008           00379         return
-                      00380 
-0117                  00381 write_com:
-0117   1683           00382         bsf STATUS, RP0
-0118   1303           00383         bcf STATUS, RP1
-0119   1698           00384         bsf TXSTA, TXEN
-011A   1283           00385         bcf STATUS, RP0
-011B   0099           00386         movwf TXREG
-011C   1683           00387         bsf STATUS, RP0
-011D                  00388 write_check
-011D   1C98           00389         btfss TXSTA, TRMT
-011E   2???           00390         goto write_check
-011F   1298           00391         bcf TXSTA, TXEN
-0120   0008           00392         return
-                      00393 
-0121                  00394 draw_hitachi:
-0121   2???           00395         call speaker
-                      00396 
-0122   1007           00397         bcf PORTC,0x00
-0123   3001           00398         movlw 0x01
-0124   2???           00399         call write
-0125   3002           00400         movlw 0x02
-0126   2???           00401         call write
-0127   0064           00402         clrwdt
-0128   3038           00403         movlw 0x38
+0105   1E8C           00363         btfss PIR1, RCIF
+0106   2???           00364         goto wait_char  
+0107   2???           00365         call read_char
+0108                  00366 wait_adress
+0108   0064           00367         clrwdt
+0109   2???           00368         call delay_write
+010A   1E8C           00369         btfss PIR1, RCIF
+010B   2???           00370         goto wait_adress        
+010C   2???           00371         call read_adress
+                      00372 
+010D   082A           00373         movf AdressHitachi,w
+010E   0084           00374         movwf FSR       
+010F   082B           00375         movf CharHitachi,w
+0110   0080           00376         movwf INDF
+0111   3040           00377         movlw 0x40
+0112   0084           00378         movwf FSR
+0113                  00379 draw_loop
+0113   0800           00380         movf INDF,W
+0114   2???           00381         call write
+                      00382 
+0115   0A84           00383         incf FSR,F
+0116   0804           00384         movf FSR,W
+0117   3A50           00385         xorlw 0x50
+0118   1903           00386         btfsc STATUS,Z
+0119   2???           00387         call draw_next
+011A   0804           00388         movf FSR,W
+011B   3A60           00389         xorlw 0x60
+011C   1D03           00390         btfss STATUS,Z
+011D   2???           00391         goto draw_loop
+011E   1103           00392         bcf STATUS,Z
+011F   0186           00393         clrf PORTB
+0120   0188           00394         clrf PORTD
+0121   0187           00395         clrf PORTC
+0122   0064           00396         clrwdt
+0123   2???           00397         call delay_write
+0124   01AC           00398         clrf ComRecieve
+0125   0008           00399         return
+0126                  00400 draw_next:                              ;переход на 2 строку
+0126   0064           00401         clrwdt
+0127   1007           00402         bcf PORTC, 0
+0128   30C0           00403         movlw b'11000000'
 0129   2???           00404         call write
-012A   3006           00405         movlw 0x06
-012B   2???           00406         call write
-012C   300C           00407         movlw 0x0c
-012D   2???           00408         call write
-012E   1407           00409         bsf PORTC,0x00
-012F   3040           00410         movlw 0x40
-0130   0084           00411         movwf FSR
-0131   1103           00412         bcf STATUS,Z
-0132   0186           00413         clrf PORTB
-                      00414         
-                      00415 
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE  9
+012A   1407           00405         bsf PORTC,0 
+012B   0008           00406         return
+                      00407 
+012C                  00408 redraw
+012C   1007           00409         bcf PORTC,0x00
+012D   3001           00410         movlw 0x01
+012E   2???           00411         call write
+012F   3002           00412         movlw 0x02
+0130   2???           00413         call write
+0131   0064           00414         clrwdt
+0132   3038           00415         movlw 0x38
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE  9
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-0133                  00416 wait_char
-0133   0064           00417         clrwdt
-0134   2???           00418         call delay_write
-0135   1E8C           00419         btfss PIR1, RCIF
-0136   2???           00420         goto wait_char  
-0137   2???           00421         call read_char
-0138                  00422 wait_adress
-0138   0064           00423         clrwdt
-0139   2???           00424         call delay_write
-013A   1E8C           00425         btfss PIR1, RCIF
-013B   2???           00426         goto wait_adress        
-013C   2???           00427         call read_adress
-                      00428 
-013D   082A           00429         movf AdressHitachi,w
-013E   0084           00430         movwf FSR       
-013F   082B           00431         movf CharHitachi,w
-0140   0080           00432         movwf INDF
-0141   3040           00433         movlw 0x40
-0142   0084           00434         movwf FSR
-0143                  00435 draw_loop
-0143   0800           00436         movf INDF,W
-0144   2???           00437         call write
-                      00438 
-0145   0A84           00439         incf FSR,F
-0146   0804           00440         movf FSR,W
-0147   3A50           00441         xorlw 0x50
-0148   1903           00442         btfsc STATUS,Z
-0149   2???           00443         call draw_next
-014A   0804           00444         movf FSR,W
-014B   3A60           00445         xorlw 0x60
-014C   1D03           00446         btfss STATUS,Z
-014D   2???           00447         goto draw_loop
-014E   1103           00448         bcf STATUS,Z
-014F   0186           00449         clrf PORTB
-0150   0188           00450         clrf PORTD
-0151   0187           00451         clrf PORTC
-0152   0064           00452         clrwdt
-0153   2???           00453         call delay_write
-0154   0008           00454         return
-0155                  00455 draw_next:                              ;переход на 2 строку
-0155   0064           00456         clrwdt
-0156   1007           00457         bcf PORTC, 0
-0157   30C0           00458         movlw b'11000000'
-0158   2???           00459         call write
-0159   1407           00460         bsf PORTC,0 
-015A   0008           00461         return
-                      00462 
-015B                  00463 redraw:
-015B   1007           00464         bcf PORTC,0x00
-015C   3001           00465         movlw 0x01
-015D   2???           00466         call write
-015E   3002           00467         movlw 0x02
-015F   2???           00468         call write
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 10
+0133   2???           00416         call write
+0134   3006           00417         movlw 0x06
+0135   2???           00418         call write
+0136   300C           00419         movlw 0x0c
+0137   2???           00420         call write
+0138   1407           00421         bsf PORTC,0x00
+0139   3040           00422         movlw 0x40
+013A   0084           00423         movwf FSR
+013B   1103           00424         bcf STATUS,Z
+013C   3040           00425         movlw 0x40
+013D   0084           00426         movwf FSR
+013E                  00427 redraw_loop
+013E   0800           00428         movf INDF,W
+013F   2???           00429         call write
+                      00430 
+0140   0A84           00431         incf FSR,F
+0141   0804           00432         movf FSR,W
+0142   3A50           00433         xorlw 0x50
+0143   1903           00434         btfsc STATUS,Z
+0144   2???           00435         call redraw_next
+0145   0804           00436         movf FSR,W
+0146   3A60           00437         xorlw 0x60
+0147   1D03           00438         btfss STATUS,Z
+0148   2???           00439         goto redraw_loop
+0149   1103           00440         bcf STATUS,Z
+014A   0186           00441         clrf PORTB
+014B   0188           00442         clrf PORTD
+014C   0187           00443         clrf PORTC
+014D   0064           00444         clrwdt
+014E   2???           00445         call delay_write
+014F   01AC           00446         clrf ComRecieve
+0150   2???           00447         goto mode_select
+0151                  00448 redraw_next:                            ;переход на 2 строку
+0151   0064           00449         clrwdt
+0152   1007           00450         bcf PORTC, 0
+0153   30C0           00451         movlw b'11000000'
+0154   2???           00452         call write
+0155   1407           00453         bsf PORTC,0 
+0156   0008           00454         return
+                      00455 
+                      00456 
+0157                  00457 write_error                     ;Код ERROR
+0157   1007           00458         bcf PORTC,0x00
+0158   3001           00459         movlw 0x01
+0159   2???           00460         call write
+015A   0064           00461         clrwdt
+015B   3038           00462         movlw 0x38
+015C   2???           00463         call write
+015D   3006           00464         movlw 0x06
+015E   2???           00465         call write
+015F   300C           00466         movlw 0x0c
+0160   2???           00467         call write
+0161   1407           00468         bsf PORTC,0x00
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 10
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-0160   0064           00469         clrwdt
-0161   3038           00470         movlw 0x38
-0162   2???           00471         call write
-0163   3006           00472         movlw 0x06
-0164   2???           00473         call write
-0165   300C           00474         movlw 0x0c
-0166   2???           00475         call write
-0167   1407           00476         bsf PORTC,0x00
-0168   3040           00477         movlw 0x40
-0169   0084           00478         movwf FSR
-016A   1103           00479         bcf STATUS,Z
-016B   3040           00480         movlw 0x40
-016C   0084           00481         movwf FSR
-016D                  00482 redraw_loop
-016D   0800           00483         movf INDF,W
-016E   2???           00484         call write
-                      00485 
-016F   0A84           00486         incf FSR,F
-0170   0804           00487         movf FSR,W
-0171   3A50           00488         xorlw 0x50
-0172   1903           00489         btfsc STATUS,Z
-0173   2???           00490         call redraw_next
-0174   0804           00491         movf FSR,W
-0175   3A60           00492         xorlw 0x60
-0176   1D03           00493         btfss STATUS,Z
-0177   2???           00494         goto redraw_loop
-0178   1103           00495         bcf STATUS,Z
-0179   0186           00496         clrf PORTB
-017A   0188           00497         clrf PORTD
-017B   0187           00498         clrf PORTC
-017C   0064           00499         clrwdt
-017D   2???           00500         call delay_write
-017E   2???           00501         goto STOP
-017F   0008           00502         return
-0180                  00503 redraw_next:                            ;переход на 2 строку
-0180   0064           00504         clrwdt
-0181   1007           00505         bcf PORTC, 0
-0182   30C0           00506         movlw b'11000000'
-0183   2???           00507         call write
-0184   1407           00508         bsf PORTC,0 
-0185   0008           00509         return
-                      00510 
-                      00511 
-0186                  00512 test_chars:
-0186   3040           00513         movlw 0x40
-0187   0084           00514         movwf FSR
-0188                  00515 test_loop
-0188   0804           00516         movf FSR,W
-0189   0080           00517         movwf INDF
-018A   0A84           00518         incf FSR,F
-018B   0804           00519         movf FSR,W
-018C   3A60           00520         xorlw 0x60
-018D   1D03           00521         btfss STATUS,Z
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 11
+                      00469 
+0162   3045           00470         movlw 0x45                      ;Слово "ERROR"
+0163   2???           00471         call write
+0164   3052           00472         movlw 0x52
+0165   2???           00473         call write
+0166   3052           00474         movlw 0x52
+0167   2???           00475         call write
+0168   304F           00476         movlw 0x4F
+0169   2???           00477         call write
+016A   3052           00478         movlw 0x52
+016B   2???           00479         call write
+                      00480 
+016C   3000           00481         movlw 0x00
+016D   0086           00482         movwf PORTB
+016E   3000           00483         movlw 0x00
+016F   0087           00484         movwf PORTC
+0170   0064           00485         clrwdt
+0171   2???           00486         call error_delay
+0172   2???           00487         goto redraw
+0173   2???           00488         goto mode_select
+0174                  00489 error_delay:                    ;Задержка для ERROR
+0174   0064           00490         clrwdt
+0175   303D           00491         movlw 0x3D
+0176   00A8           00492         movwf ErrorTime
+0177   0181           00493         clrf TMR0
+0178                  00494 error_c
+0178   0064           00495         clrwdt  
+0179   30FF           00496         movlw 0xff
+017A   0201           00497         subwf TMR0,0
+017B   1D03           00498         btfss STATUS,0x02
+017C   2???           00499         goto error_c
+017D   2???           00500         goto error_d
+017E                  00501 error_d
+017E   0181           00502         clrf TMR0
+017F   1103           00503         bcf STATUS,0x02
+0180   0064           00504         clrwdt  
+0181   0BA8           00505         decfsz ErrorTime,1
+0182   2???           00506         goto error_c
+0183   0008           00507         return
+                      00508 
+                      00509 
+0184                  00510 s_segment_counter:
+0184   1303           00511         bcf STATUS, RP1
+0185   1283           00512         bcf STATUS, RP0
+0186   3016           00513         movlw 0x16
+0187   00A9           00514         movwf sCounter
+0188                  00515 SC_Loop
+0188   0064           00516         clrwdt
+0189   2???           00517         call s_segment
+018A   0BA9           00518         decfsz sCounter,f
+018B   2???           00519         goto SC_Loop
+018C   0008           00520         return
+                      00521 
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 11
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-018E   2???           00522         goto test_loop
-018F   0008           00523         return
-                      00524 
+018D                  00522 s_segment:
+018D   3000           00523         movlw 0x00
+018E   0084           00524         movwf FSR
                       00525 
-0190                  00526 s_segment:
-0190   3000           00527         movlw 0x00
-0191   0084           00528         movwf FSR
-                      00529 
-0192   1683           00530         bsf STATUS,RP0
-0193   1303           00531         bcf STATUS,RP1
-0194   3000           00532         movlw 0x00      
-0195   0086           00533         movwf TRISB
-0196   3000           00534         movlw 0x00      
-0197   0088           00535         movwf TRISD
-0198   1283           00536         bcf STATUS,RP0
-0199   1303           00537         bcf STATUS,RP1
-                      00538 
-019A   1003           00539         bcf STATUS,C
-019B   30FF           00540         movlw 0xff
-019C   0088           00541         movwf PORTD
-019D                  00542 s_segment_loop
-019D   0C08           00543         rrf PORTD,0
-019E   0088           00544         movwf PORTD
-                      00545 
-019F   082C           00546         movf ComRecieve,w
-01A0   00AF           00547         movwf SCheck
-                      00548 
-01A1   15A1           00549         bsf MirrorCounter,0x03
-01A2                  00550 mirror_loop
+018F   1683           00526         bsf STATUS,RP0
+0190   1303           00527         bcf STATUS,RP1
+0191   3000           00528         movlw 0x00      
+0192   0086           00529         movwf TRISB
+0193   3000           00530         movlw 0x00      
+0194   0088           00531         movwf TRISD
+0195   1283           00532         bcf STATUS,RP0
+0196   1303           00533         bcf STATUS,RP1
+                      00534 
+0197   1003           00535         bcf STATUS,C
+0198   30FF           00536         movlw 0xff
+0199   0088           00537         movwf PORTD
+019A                  00538 s_segment_loop
+019A   0C08           00539         rrf PORTD,0
+019B   0088           00540         movwf PORTD
+                      00541 
+019C   082C           00542         movf ComRecieve,w
+019D   00AF           00543         movwf SCheck
+                      00544 
+019E   15A1           00545         bsf MirrorCounter,0x03
+019F                  00546 mirror_loop
 Message[305]: Using default destination of 1 (file).
-01A2   0CAF           00551         rrf SCheck
+019F   0CAF           00547         rrf SCheck
 Message[305]: Using default destination of 1 (file).
-01A3   0DA2           00552         rlf MirrorReg
+01A0   0DA2           00548         rlf MirrorReg
 Message[305]: Using default destination of 1 (file).
-01A4   0BA1           00553         decfsz MirrorCounter
-01A5   2???           00554         goto mirror_loop
-                      00555 
-01A6   0908           00556         comf PORTD,0
-01A7   05A2           00557         andwf MirrorReg,1
-01A8   0622           00558         xorwf MirrorReg,0
-                      00559         
-01A9   1903           00560         btfsc STATUS,Z
-01AA   2???           00561         goto s_segment_1
-01AB   2???           00562         goto s_segment_0
-01AC                  00563 s_segment_inc
-01AC   0A84           00564         incf FSR,F
-01AD   0804           00565         movf FSR,W
-01AE   3A08           00566         xorlw 0x08
-01AF   1D03           00567         btfss STATUS,Z
-01B0   2???           00568         goto s_segment_loop
-01B1   0008           00569         return
-                      00570 
-01B2                  00571 s_segment_0
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 12
+01A1   0BA1           00549         decfsz MirrorCounter
+01A2   2???           00550         goto mirror_loop
+                      00551 
+01A3   0908           00552         comf PORTD,0
+01A4   05A2           00553         andwf MirrorReg,1
+01A5   0622           00554         xorwf MirrorReg,0
+                      00555         
+01A6   1903           00556         btfsc STATUS,Z
+01A7   2???           00557         goto s_segment_1
+01A8   2???           00558         goto s_segment_0
+01A9                  00559 s_segment_inc
+01A9   0A84           00560         incf FSR,F
+01AA   0804           00561         movf FSR,W
+01AB   3A08           00562         xorlw 0x08
+01AC   1D03           00563         btfss STATUS,Z
+01AD   2???           00564         goto s_segment_loop
+01AE   0008           00565         return
+                      00566 
+01AF                  00567 s_segment_0
+01AF   303F           00568         movlw 0x3f
+01B0   0086           00569         movwf PORTB
+01B1   2???           00570         goto s_segment_delay
+01B2                  00571 s_segment_1
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 12
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-01B2   303F           00572         movlw 0x3f
+01B2   3006           00572         movlw 0x06
 01B3   0086           00573         movwf PORTB
 01B4   2???           00574         goto s_segment_delay
-01B5                  00575 s_segment_1
-01B5   3006           00576         movlw 0x06
-01B6   0086           00577         movwf PORTB
-01B7   2???           00578         goto s_segment_delay
-                      00579 
-01B8                  00580 s_segment_delay
-01B8   0181           00581         clrf TMR0
-01B9                  00582 s_segment_c
-01B9   0064           00583         clrwdt  
-01BA   303A           00584         movlw 0x3A
-01BB   0201           00585         subwf TMR0,0
-01BC   1D03           00586         btfss STATUS,0x02
-01BD   2???           00587         goto s_segment_c
-01BE   2???           00588         goto s_segment_inc
-                      00589 
-                      00590 
-01BF                  00591 ADC
-01BF   2???           00592         call speaker
-01C0   0186           00593         clrf PORTB
-01C1   0188           00594         clrf PORTD
-01C2   1303           00595         bcf STATUS, RP1
-01C3   1683           00596         bsf STATUS, RP0
-01C4   3004           00597         movlw 0x04
-01C5   0089           00598         movwf TRISE
-01C6   3080           00599         movlw 0x80
-01C7   009F           00600         movwf ADCON1
-01C8   1283           00601         bcf STATUS, RP0
-01C9   3078           00602         movlw b'01111000'
-01CA   009F           00603         movwf ADCON0
-01CB                  00604 ADC_start
-01CB   2???           00605         call scan_com
-01CC   141F           00606         bsf ADCON0, ADON
-01CD   1303           00607         bcf STATUS, RP1
-01CE   1683           00608         bsf STATUS, RP0
-01CF   3004           00609         movlw 0x04
-01D0   0089           00610         movwf TRISE
-01D1   3080           00611         movlw 0x80
-01D2   009F           00612         movwf ADCON1
-01D3   1283           00613         bcf STATUS, RP0
-01D4   3005           00614         movlw .5
-01D5   2???           00615         call Small_delay
-01D6   151F           00616         bsf ADCON0,GO_DONE
-01D7                  00617 ADC_Loop 
-01D7   191F           00618         btfsc ADCON0,GO_DONE
-01D8   2???           00619         goto ADC_Loop
-                      00620                 
-                      00621                 ;передача значения регуляятора
-01D9   081E           00622         movf ADRESH,w
-01DA   2???           00623         call write_com
-01DB   1683           00624         bsf STATUS,RP0
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 13
+                      00575 
+01B5                  00576 s_segment_delay
+01B5   0181           00577         clrf TMR0
+01B6                  00578 s_segment_c
+01B6   0064           00579         clrwdt  
+01B7   300A           00580         movlw 0x0A
+01B8   0201           00581         subwf TMR0,0
+01B9   1D03           00582         btfss STATUS,0x02
+01BA   2???           00583         goto s_segment_c
+01BB   2???           00584         goto s_segment_inc
+                      00585 
+                      00586 
+01BC                  00587 ADC
+01BC   2???           00588         call speaker
+01BD   0186           00589         clrf PORTB
+01BE   0188           00590         clrf PORTD
+01BF   1303           00591         bcf STATUS, RP1
+01C0   1683           00592         bsf STATUS, RP0
+01C1   3004           00593         movlw 0x04
+01C2   0089           00594         movwf TRISE
+01C3   3080           00595         movlw 0x80
+01C4   009F           00596         movwf ADCON1
+01C5   1283           00597         bcf STATUS, RP0
+01C6   3078           00598         movlw b'01111000'
+01C7   009F           00599         movwf ADCON0
+01C8                  00600 ADC_start
+01C8   2???           00601         call scan_com
+01C9   141F           00602         bsf ADCON0, ADON
+01CA   1303           00603         bcf STATUS, RP1
+01CB   1683           00604         bsf STATUS, RP0
+01CC   3004           00605         movlw 0x04
+01CD   0089           00606         movwf TRISE
+01CE   3080           00607         movlw 0x80
+01CF   009F           00608         movwf ADCON1
+01D0   1283           00609         bcf STATUS, RP0
+01D1   3005           00610         movlw .5
+01D2   2???           00611         call Small_delay
+01D3   151F           00612         bsf ADCON0,GO_DONE
+01D4                  00613 ADC_Loop 
+01D4   191F           00614         btfsc ADCON0,GO_DONE
+01D5   2???           00615         goto ADC_Loop
+                      00616                 
+                      00617                 ;передача значения регуляятора
+01D6   081E           00618         movf ADRESH,w
+01D7   2???           00619         call write_com
+01D8   1683           00620         bsf STATUS,RP0
+01D9   081E           00621         movf ADRESL,w
+01DA   2???           00622         call write_com
+01DB   1283           00623         bcf STATUS,RP0
+01DC   1303           00624         bcf STATUS,RP1
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 13
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-01DC   081E           00625         movf ADRESL,w
-01DD   2???           00626         call write_com
-01DE   1283           00627         bcf STATUS,RP0
-01DF   1303           00628         bcf STATUS,RP1
-                      00629                 
-                      00630                 ;передача кода нажатой кнопки
-01E0   2???           00631         call key_det
-01E1   3000           00632         movlw 0x00
-01E2                  00633 write_key
-01E2   2???           00634         call write_com
-01E3   2???           00635         call ADC_delay
-01E4   2???           00636         goto ADC_start
-                      00637 
-01E5                  00638 ADC_delay:                      ;Задержка для пищалки
-01E5   1283           00639         bcf STATUS,RP0
-01E6   1303           00640         bcf STATUS,RP1
-01E7   1103           00641         bcf STATUS,Z
-01E8   0064           00642         clrwdt
-01E9   3010           00643         movlw 0x10
-01EA   00B1           00644         movwf ADCTime
-01EB   0181           00645         clrf TMR0
-01EC                  00646 ADC_c
-01EC   0064           00647         clrwdt  
-01ED   30FF           00648         movlw 0xff
-01EE   0201           00649         subwf TMR0,0
-01EF   1D03           00650         btfss STATUS,0x02
-01F0   2???           00651         goto ADC_c
-01F1   2???           00652         goto ADC_d
-01F2                  00653 ADC_d
-01F2   0181           00654         clrf TMR0
-01F3   1103           00655         bcf STATUS,0x02
-01F4   0064           00656         clrwdt  
-01F5   0BB1           00657         decfsz ADCTime,1
-01F6   2???           00658         goto ADC_c
-01F7   0008           00659         return
-01F8   2???           00660         goto ADC_start
-                      00661 
-01F9                  00662 Small_delay:
-01F9   1303           00663         bcf STATUS, RP1
-01FA   1283           00664         bcf STATUS, RP0
-01FB   00B0           00665         movwf fCOUNTER
-01FC                  00666 SD_Loop:
-01FC   0064           00667         clrwdt
-01FD   0BB0           00668         decfsz fCOUNTER,f
-01FE   2???           00669         goto SD_Loop
-01FF   0008           00670         return
-0200                  00671 key_det:
-0200   1303           00672         bcf STATUS,RP1
-0201   1683           00673         bsf STATUS,RP0
-0202   3038           00674         movlw b'00111000'       
-0203   0085           00675         movwf TRISA
-0204   3007           00676         movlw 0x07
-0205   009F           00677         movwf ADCON1
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 14
+                      00625                 
+                      00626                 ;передача кода нажатой кнопки
+01DD   2???           00627         call key_det
+01DE   3000           00628         movlw 0x00
+01DF                  00629 write_key
+01DF   2???           00630         call write_com
+01E0   2???           00631         call ADC_delay
+01E1   2???           00632         goto ADC_start
+                      00633 
+01E2                  00634 ADC_delay:                      ;Задержка для пищалки
+01E2   1283           00635         bcf STATUS,RP0
+01E3   1303           00636         bcf STATUS,RP1
+01E4   1103           00637         bcf STATUS,Z
+01E5   0064           00638         clrwdt
+01E6   3010           00639         movlw 0x10
+01E7   00B1           00640         movwf ADCTime
+01E8   0181           00641         clrf TMR0
+01E9                  00642 ADC_c
+01E9   0064           00643         clrwdt  
+01EA   30FF           00644         movlw 0xff
+01EB   0201           00645         subwf TMR0,0
+01EC   1D03           00646         btfss STATUS,0x02
+01ED   2???           00647         goto ADC_c
+01EE   2???           00648         goto ADC_d
+01EF                  00649 ADC_d
+01EF   0181           00650         clrf TMR0
+01F0   1103           00651         bcf STATUS,0x02
+01F1   0064           00652         clrwdt  
+01F2   0BB1           00653         decfsz ADCTime,1
+01F3   2???           00654         goto ADC_c
+01F4   0008           00655         return
+01F5   2???           00656         goto ADC_start
+                      00657 
+01F6                  00658 Small_delay:
+01F6   1303           00659         bcf STATUS, RP1
+01F7   1283           00660         bcf STATUS, RP0
+01F8   00B0           00661         movwf fCOUNTER
+01F9                  00662 SD_Loop:
+01F9   0064           00663         clrwdt
+01FA   0BB0           00664         decfsz fCOUNTER,f
+01FB   2???           00665         goto SD_Loop
+01FC   0008           00666         return
+01FD                  00667 key_det:
+01FD   1303           00668         bcf STATUS,RP1
+01FE   1683           00669         bsf STATUS,RP0
+01FF   3038           00670         movlw b'00111000'       
+0200   0085           00671         movwf TRISA
+0201   3007           00672         movlw 0x07
+0202   009F           00673         movwf ADCON1
+0203   1283           00674         bcf STATUS,RP0
+0204   1303           00675         bcf STATUS,RP1
+0205   1103           00676         bcf STATUS,Z
+0206   01B2           00677         clrf NumPressKey
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 14
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-0206   1283           00678         bcf STATUS,RP0
-0207   1303           00679         bcf STATUS,RP1
-0208   1103           00680         bcf STATUS,Z
-0209   01B2           00681         clrf NumPressKey
-020A   30FF           00682         movlw 0xff
-020B   00B3           00683         movwf PreKey
-020C                  00684 col1 
-020C   1405           00685         bsf PORTA,0
-020D   1085           00686         bcf PORTA,1
-020E   1105           00687         bcf PORTA,2
-020F   3032           00688         movlw .50
-0210   2???           00689         call Small_delay
-0211   0000           00690         nop
-0212   0805           00691         movf PORTA,w
-0213   3938           00692         andlw 0x38
-0214   30FF           00693         movlw 0xff
-0215   1903           00694         btfsc STATUS,Z
-0216   2???           00695         goto col2
-0217   30FA           00696         movlw .250
-0218   2???           00697         call Small_delay
-0219   30FF           00698         movlw 0xff
-021A   1985           00699         btfsc PORTA,3
-021B   3001           00700         movlw .1
-021C   1A05           00701         btfsc PORTA,4
-021D   3004           00702         movlw .4
-021E   1A85           00703         btfsc PORTA,5
-021F   3007           00704         movlw .7
-0220                  00705 col2
-0220   06B3           00706         xorwf PreKey,1
-0221   1D03           00707         btfss STATUS,Z
-0222   2???           00708         goto write_key
-0223   1103           00709         bcf STATUS,Z
-0224   30FF           00710         movlw 0xff
-0225   00B3           00711         movwf PreKey
-0226   1005           00712         bcf PORTA,0
-0227   1485           00713         bsf PORTA,1
-0228   1105           00714         bcf PORTA,2
-0229   3032           00715         movlw .50
-022A   2???           00716         call Small_delay
-022B   0000           00717         nop
-022C   0805           00718         movf PORTA,w
-022D   3938           00719         andlw 0x38
-022E   30FF           00720         movlw 0xff
-022F   1903           00721         btfsc STATUS,Z
-0230   2???           00722         goto col3
-0231   30FA           00723         movlw .250
-0232   2???           00724         call Small_delay
-0233   30FF           00725         movlw 0xff
-0234   1985           00726         btfsc PORTA,3
-0235   3002           00727         movlw .2
-0236   1A05           00728         btfsc PORTA,4
-0237   3005           00729         movlw .5
-0238   1A85           00730         btfsc PORTA,5
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 15
+0207   30FF           00678         movlw 0xff
+0208   00B3           00679         movwf PreKey
+0209                  00680 col1 
+0209   1405           00681         bsf PORTA,0
+020A   1085           00682         bcf PORTA,1
+020B   1105           00683         bcf PORTA,2
+020C   3032           00684         movlw .50
+020D   2???           00685         call Small_delay
+020E   0000           00686         nop
+020F   0805           00687         movf PORTA,w
+0210   3938           00688         andlw 0x38
+0211   30FF           00689         movlw 0xff
+0212   1903           00690         btfsc STATUS,Z
+0213   2???           00691         goto col2
+0214   30FA           00692         movlw .250
+0215   2???           00693         call Small_delay
+0216   30FF           00694         movlw 0xff
+0217   1985           00695         btfsc PORTA,3
+0218   3001           00696         movlw .1
+0219   1A05           00697         btfsc PORTA,4
+021A   3004           00698         movlw .4
+021B   1A85           00699         btfsc PORTA,5
+021C   3007           00700         movlw .7
+021D                  00701 col2
+021D   06B3           00702         xorwf PreKey,1
+021E   1D03           00703         btfss STATUS,Z
+021F   2???           00704         goto write_key
+0220   1103           00705         bcf STATUS,Z
+0221   30FF           00706         movlw 0xff
+0222   00B3           00707         movwf PreKey
+0223   1005           00708         bcf PORTA,0
+0224   1485           00709         bsf PORTA,1
+0225   1105           00710         bcf PORTA,2
+0226   3032           00711         movlw .50
+0227   2???           00712         call Small_delay
+0228   0000           00713         nop
+0229   0805           00714         movf PORTA,w
+022A   3938           00715         andlw 0x38
+022B   30FF           00716         movlw 0xff
+022C   1903           00717         btfsc STATUS,Z
+022D   2???           00718         goto col3
+022E   30FA           00719         movlw .250
+022F   2???           00720         call Small_delay
+0230   30FF           00721         movlw 0xff
+0231   1985           00722         btfsc PORTA,3
+0232   3002           00723         movlw .2
+0233   1A05           00724         btfsc PORTA,4
+0234   3005           00725         movlw .5
+0235   1A85           00726         btfsc PORTA,5
+0236   3008           00727         movlw .8
+                      00728 
+0237                  00729 col3
+0237   06B3           00730         xorwf PreKey,1
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 15
 
 
 LOC  OBJECT CODE     LINE SOURCE TEXT
   VALUE
 
-0239   3008           00731         movlw .8
-                      00732 
-023A                  00733 col3
-023A   06B3           00734         xorwf PreKey,1
-023B   1D03           00735         btfss STATUS,Z
-023C   2???           00736         goto write_key
-023D   1103           00737         bcf STATUS,Z
-023E   30FF           00738         movlw 0xff
-023F   00B3           00739         movwf PreKey
-0240   1005           00740         bcf PORTA,0
-0241   1085           00741         bcf PORTA,1
-0242   1505           00742         bsf PORTA,2
-0243   3032           00743         movlw .50
-0244   2???           00744         call Small_delay
-0245   0000           00745         nop
-0246   0805           00746         movf PORTA,w
-0247   3938           00747         andlw 0x38
-0248   30FF           00748         movlw 0xff
-0249   1903           00749         btfsc STATUS,Z
-024A   2???           00750         goto cnt
-024B   30FA           00751         movlw .250
-024C   2???           00752         call Small_delay
-024D   30FF           00753         movlw 0xff
-024E   1985           00754         btfsc PORTA,3
-024F   3003           00755         movlw .3
-0250   1A05           00756         btfsc PORTA,4
-0251   3006           00757         movlw .6
-0252   1A85           00758         btfsc PORTA,5
-0253   3009           00759         movlw .9
-0254                  00760 cnt
-0254   06B3           00761         xorwf PreKey,1
-0255   1D03           00762         btfss STATUS,Z
-0256   2???           00763         goto write_key
-0257   0008           00764         return
-                      00765 
-0258                  00766 STOP
-                      00767 
-                      00768         end
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 16
+0238   1D03           00731         btfss STATUS,Z
+0239   2???           00732         goto write_key
+023A   1103           00733         bcf STATUS,Z
+023B   30FF           00734         movlw 0xff
+023C   00B3           00735         movwf PreKey
+023D   1005           00736         bcf PORTA,0
+023E   1085           00737         bcf PORTA,1
+023F   1505           00738         bsf PORTA,2
+0240   3032           00739         movlw .50
+0241   2???           00740         call Small_delay
+0242   0000           00741         nop
+0243   0805           00742         movf PORTA,w
+0244   3938           00743         andlw 0x38
+0245   30FF           00744         movlw 0xff
+0246   1903           00745         btfsc STATUS,Z
+0247   2???           00746         goto cnt
+0248   30FA           00747         movlw .250
+0249   2???           00748         call Small_delay
+024A   30FF           00749         movlw 0xff
+024B   1985           00750         btfsc PORTA,3
+024C   3003           00751         movlw .3
+024D   1A05           00752         btfsc PORTA,4
+024E   3006           00753         movlw .6
+024F   1A85           00754         btfsc PORTA,5
+0250   3009           00755         movlw .9
+0251                  00756 cnt
+0251   06B3           00757         xorwf PreKey,1
+0252   1D03           00758         btfss STATUS,Z
+0253   2???           00759         goto write_key
+0254   0008           00760         return
+                      00761 
+0255                  00762 STOP
+                      00763 
+                      00764         end
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 16
 
 
 SYMBOL TABLE
@@ -877,17 +873,17 @@ SYMBOL TABLE
 ACKDT                             00000005
 ACKEN                             00000004
 ACKSTAT                           00000006
-ADC                               000001BF
+ADC                               000001BC
 ADCON0                            0000001F
 ADCON1                            0000009F
 ADCS0                             00000006
 ADCS1                             00000007
 ADCTime                           00000031
-ADC_Loop                          000001D7
-ADC_c                             000001EC
-ADC_d                             000001F2
-ADC_delay                         000001E5
-ADC_start                         000001CB
+ADC_Loop                          000001D4
+ADC_c                             000001E9
+ADC_d                             000001EF
+ADC_delay                         000001E2
+ADC_start                         000001C8
 ADDEN                             00000003
 ADFM                              00000007
 ADIE                              00000006
@@ -926,13 +922,14 @@ CCPR1L                            00000015
 CCPR2                             0000001B
 CCPR2H                            0000001C
 CCPR2L                            0000001B
-CHS0                              00000003
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 17
+CC_Loop                           0000001C
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 17
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+CHS0                              00000003
 CHS1                              00000004
 CHS2                              00000005
 CKE                               00000006
@@ -985,13 +982,13 @@ NOT_ADDRESS                       00000005
 NOT_BO                            00000000
 NOT_BOR                           00000000
 NOT_DONE                          00000002
-NOT_PD                            00000003
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 18
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 18
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+NOT_PD                            00000003
 NOT_POR                           00000001
 NOT_RBPU                          00000007
 NOT_RC8                           00000006
@@ -1044,13 +1041,13 @@ RB1                               00000001
 RB2                               00000002
 RB3                               00000003
 RB4                               00000004
-RB5                               00000005
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 19
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 19
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+RB5                               00000005
 RB6                               00000006
 RB7                               00000007
 RBIE                              00000003
@@ -1083,7 +1080,7 @@ RD7                               00000007
 RE0                               00000000
 RE1                               00000001
 RE2                               00000002
-READ                              0000010A
+READ                              000000DA
 READ_WRITE                        00000002
 RP0                               00000005
 RP1                               00000006
@@ -1094,22 +1091,23 @@ R_NOT_W                           00000002
 R_W                               00000002
 RowTime                           00000026
 S                                 00000003
+SC_Loop                           00000188
 SCheck                            0000002F
-SD_Loop                           000001FC
+SD_Loop                           000001F9
 SEN                               00000000
 SMP                               00000007
 SPBRG                             00000099
 SPEN                              00000007
 SREN                              00000005
 SSPADD                            00000093
-SSPBUF                            00000013
-SSPCON                            00000014
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 20
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 20
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+SSPBUF                            00000013
+SSPCON                            00000014
 SSPCON2                           00000091
 SSPEN                             00000005
 SSPIE                             00000003
@@ -1121,13 +1119,12 @@ SSPM3                             00000003
 SSPOV                             00000006
 SSPSTAT                           00000094
 STATUS                            00000003
-STOP                              00000258
+STOP                              00000255
 SYNC                              00000004
 ShiftB                            00000024
 ShiftC                            00000023
 ShiftD                            00000025
-Small_delay                       000001F9
-SpeakerTime                       00000029
+Small_delay                       000001F6
 T0CS                              00000005
 T0IE                              00000005
 T0IF                              00000002
@@ -1162,13 +1159,13 @@ TRISA                             00000085
 TRISA0                            00000000
 TRISA1                            00000001
 TRISA2                            00000002
-TRISA3                            00000003
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 21
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 21
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+TRISA3                            00000003
 TRISA4                            00000004
 TRISA5                            00000005
 TRISB                             00000086
@@ -1221,13 +1218,13 @@ WREN                              00000002
 WRERR                             00000003
 Z                                 00000002
 _BODEN_OFF                        00003FBF
-_BODEN_ON                         00003FFF
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 22
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 22
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
+_BODEN_ON                         00003FFF
 _CONFIG                           00002007
 _CPD_OFF                          00003FFF
 _CPD_ON                           00003EFF
@@ -1256,73 +1253,71 @@ _WRT_ENABLE_ON                    00003FFF
 _XT_OSC                           00003FFD
 __16F877                          00000001
 __DEBUG                           1
-adress_check                      000000A5
+adress_check                      000000B4
 begin                             00000004
-cnt                               00000254
-col1                              0000020C
-col2                              00000220
-col3                              0000023A
-col_c1                            00000031
-col_delay                         00000030
-col_loop                          0000004A
-col_start                         00000038
-column                            00000037
-delay_write                       0000009E
-draw_hitachi                      00000121
-draw_loop                         00000143
-draw_next                         00000155
-error1                            00000114
-error2                            00000115
-error_c                           000000D1
-error_d                           000000D7
-error_delay                       000000CD
+clear_chars                       0000001A
+cnt                               00000251
+col1                              00000209
+col2                              0000021D
+col3                              00000237
+col_c1                            00000040
+col_delay                         0000003F
+col_loop                          00000059
+col_start                         00000047
+column                            00000046
+delay_write                       000000AD
+draw_hitachi                      000000F1
+draw_loop                         00000113
+draw_next                         00000126
+error1                            000000E4
+error2                            000000E5
+error_c                           00000178
+error_d                           0000017E
+error_delay                       00000174
 fCOUNTER                          00000030
-init_com                          000000FB
-key_det                           00000200
-less20                            000000AB
-mirror_loop                       000001A2
-MPASM  5.42                          LULW.ASM   11-15-2020  17:06:22         PAGE 23
+init_com                          000000CB
+key_det                           000001FD
+MPASM  5.42                          LULW.ASM   11-16-2020  13:56:46         PAGE 23
 
 
 SYMBOL TABLE
   LABEL                             VALUE 
 
-mode_select                       0000001B
-more0                             000000A5
-read_adress                       0000008E
-read_char                         0000008A
-read_com                          00000109
-redraw                            0000015B
-redraw_loop                       0000016D
-redraw_next                       00000180
-row                               0000006E
-row_c2                            00000062
-row_d2                            00000068
-row_delay                         0000005E
-row_loop                          0000007B
-row_start                         0000006F
-s_segment                         00000190
-s_segment_0                       000001B2
-s_segment_1                       000001B5
-s_segment_c                       000001B9
-s_segment_delay                   000001B8
-s_segment_inc                     000001AC
-s_segment_loop                    0000019D
-scan_com                          00000018
-speaker                           000000DD
-speaker_c                         000000EF
-speaker_d                         000000F5
-speaker_delay                     000000E9
-test_chars                        00000186
-test_loop                         00000188
-wait_adress                       00000138
-wait_char                         00000133
-write                             00000095
-write_c2                          0000009F
-write_check                       0000011D
-write_com                         00000117
-write_error                       000000B0
-write_key                         000001E2
+less20                            000000BA
+mirror_loop                       0000019F
+mode_select                       00000029
+more0                             000000B4
+read_adress                       0000009D
+read_char                         00000099
+read_com                          000000D9
+redraw                            0000012C
+redraw_loop                       0000013E
+redraw_next                       00000151
+row                               0000007D
+row_c2                            00000071
+row_d2                            00000077
+row_delay                         0000006D
+row_loop                          0000008A
+row_start                         0000007E
+sCounter                          00000029
+s_segment                         0000018D
+s_segment_0                       000001AF
+s_segment_1                       000001B2
+s_segment_c                       000001B6
+s_segment_counter                 00000184
+s_segment_delay                   000001B5
+s_segment_inc                     000001A9
+s_segment_loop                    0000019A
+scan_com                          00000025
+speaker                           000000BF
+wait_adress                       00000108
+wait_char                         00000103
+write                             000000A4
+write_c2                          000000AE
+write_check                       000000ED
+write_com                         000000E7
+write_error                       00000157
+write_key                         000001DF
 
 Errors   :     0
 Warnings :     0 reported,     0 suppressed
